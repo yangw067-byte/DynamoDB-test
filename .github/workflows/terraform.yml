@@ -1,38 +1,42 @@
 name: Terraform Deployment
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 permissions:
-    id-token: write # Allows requesting an OIDC token
-    contents: read # Required for actions/checkout
+  id-token: write # Allows requesting an OIDC token
+  contents: read # Required for actions/checkout
 
 jobs:
-    terraform:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Configure AWS credentials via OIDC
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-                  aws-region: us-east-1
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
 
-            - name: Verify IAM Role Assumption
-              run: aws sts get-caller-identity
+      - name: Verify IAM Role Assumption
+        run: aws sts get-caller-identity
 
-            - name: Install Terraform
-              uses: hashicorp/setup-terraform@v3
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
 
-            - name: Initialize Terraform
-              run: terraform init -input=false
+      - name: Initialize Terraform
+        run: terraform init -input=false
 
-            - name: Terraform Plan
-              run: terraform plan -input=false -var-file=terraform.tfvars -out=tf.plan
+      - name: Terraform Plan
+        working-directory: ${{ github.workspace }}
+        run: |
+          pwd
+          ls -la
+          terraform plan -input=false -var-file=terraform.tfvars -out=tf.plan
 
-            - name: Terraform Apply
-              run: terraform apply -input=false -auto-approve tf.plan
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tf.plan
