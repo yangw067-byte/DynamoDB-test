@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   id-token: write # Allows requesting an OIDC token
   contents: read # Required for actions/checkout
@@ -46,6 +50,7 @@ jobs:
         run: |
           terraform apply -input=false -auto-approve tf.plan
           echo ${{ github.repository_id }}
+          echo ${{ github.ref }}
 
       - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
         run: terraform destroy -input=false -auto-approve
