@@ -55,7 +55,7 @@ jobs:
                   fi
 
             - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
-              if: github.ref == 'refs/heads/Destroy' && steps.check_s3.outputs.exists == 'true'
+              if: steps.check_s3.outputs.exists == 'true'
               run: |
                   aws s3 cp s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate .
                   terraform destroy -input=false -auto-approve
