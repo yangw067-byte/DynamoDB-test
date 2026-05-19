@@ -51,6 +51,6 @@ jobs:
         if: github.ref != 'refs/heads/Destroy'
         run: |
           terraform apply -input=false -auto-approve tf.plan
-          aws s3 cp ./terraform.tfstate ${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate
+          aws s3api put-object --bucket ${{ env.TerraformStateBucket }} --key ${{ github.repository_id }}/terraform.tfstate --body ./terraform.tfstate
           echo ${{ github.repository_id }}
           echo ${{ github.ref }}
