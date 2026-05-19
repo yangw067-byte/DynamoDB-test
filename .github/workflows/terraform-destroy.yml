@@ -43,6 +43,9 @@ jobs:
             - name: Verify IAM Role Assumption
               run: aws sts get-caller-identity
 
+            - name: Install Terraform
+              uses: hashicorp/setup-terraform@v4
+
             - name: Initialize Terraform
               run: terraform init -input=false
 
