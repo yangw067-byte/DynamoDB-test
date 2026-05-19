@@ -9,6 +9,10 @@ permissions:
   id-token: write # Allows requesting an OIDC token
   contents: read # Required for actions/checkout
 
+env:
+  # Default AWS region; update as needed for your deployment
+  AWS_REGION: us-east-1
+
 jobs:
   terraform:
     runs-on: ubuntu-latest
@@ -20,7 +24,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-1
+          # Set the AWS region; change if deploying to a different region
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify IAM Role Assumption
         run: aws sts get-caller-identity
@@ -34,9 +39,14 @@ jobs:
       - name: Terraform Plan
         working-directory: ${{ github.workspace }}
         run: |
-          pwd
-          ls -la
           terraform plan -input=false -var-file=terraform.tfvars -out=tf.plan
 
       - name: Terraform Apply
-        run: terraform apply -input=false -auto-approve tf.plan
+        run: |
+          terraform apply -input=false -auto-approve tf.plan
+          pwd
+          ls -la
+
+      - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
+        run: |
+          terraform destroy -input=false -auto-approve tf.plan
