@@ -45,6 +45,8 @@ jobs:
 
             - name: Install Terraform
               uses: hashicorp/setup-terraform@v4
+              with:
+                  terraform_version: "latest"
 
             - name: Initialize Terraform
               run: terraform init -input=false
