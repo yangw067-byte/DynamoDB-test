@@ -3,8 +3,10 @@ name: Terraform Apply
 on:
   workflow_dispatch:
 
+# Ensure only one workflow per branch runs at a time to prevent concurrent Terraform state changes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  # This cancels any in-progress runs of the same group when a new run is triggered
   cancel-in-progress: true
 
 permissions:

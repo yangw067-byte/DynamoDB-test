@@ -2,6 +2,11 @@ name: Terraform Destroy
 
 on:
     workflow_dispatch:
+        inputs:
+            terraform_state_bucket:
+                description: "S3 bucket name for Terraform state"
+                required: true
+                default: "yangw067test"
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,15 +19,19 @@ permissions:
 env:
     # Default AWS region; update as needed for your deployment
     AWS_REGION: us-east-1
-    TerraformStateBucket: yangw067test # Update with your S3 bucket name
+    TerraformStateBucket: ${{ github.event.inputs.terraform_state_bucket }} # S3 bucket name for Terraform state
     FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
     terraform-destroy:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v5
+            - name: Validate required secrets
+              run: |
+                  if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+                    echo "Error: AWS_ROLE_ARN secret is not set. Please add it in your repository settings."
+                    exit 1
+                  fi
 
             - name: Configure AWS credentials via OIDC
               uses: aws-actions/configure-aws-credentials@v6
@@ -33,9 +42,6 @@ jobs:
 
             - name: Verify IAM Role Assumption
               run: aws sts get-caller-identity
-
-            - name: Install Terraform
-              uses: hashicorp/setup-terraform@v4
 
             - name: Initialize Terraform
               run: terraform init -input=false
@@ -54,9 +60,15 @@ jobs:
                     echo "exists=false" >> $GITHUB_OUTPUT
                   fi
 
-            - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
+            # The following step will destroy resources if the state file exists in S3.
+            - name: Terraform destroy (this step will destroy resources if state exists)
               if: steps.check_s3.outputs.exists == 'true'
               run: |
                   aws s3 cp s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate .
-                  terraform destroy -input=false -auto-approve
-                  aws s3 rm s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate
+                  if terraform destroy -input=false -auto-approve; then
+                    echo "Terraform destroy completed successfully."
+                    aws s3 rm s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate
+                  else
+                    echo "Error: Terraform destroy failed. Please check the logs for details."
+                    exit 1
+                  fi
