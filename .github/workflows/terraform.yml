@@ -42,11 +42,7 @@ jobs:
           terraform plan -input=false -var-file=terraform.tfvars -out=tf.plan
 
       - name: Terraform Apply
-        run: |
-          terraform apply -input=false -auto-approve tf.plan
-          pwd
-          ls -la
+        run: terraform apply -input=false -auto-approve tf.plan
 
       - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
-        run: |
-          terraform destroy -input=false -auto-approve tf.plan
+        run: terraform destroy -input=false -auto-approve
