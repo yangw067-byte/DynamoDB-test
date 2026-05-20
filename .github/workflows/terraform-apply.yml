@@ -15,7 +15,6 @@ permissions:
 
 env:
   # Default AWS region; update as needed for your deployment
-  AWS_REGION: us-east-1
   TerraformStateBucket: yangw067test # Update with your S3 bucket name
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -31,7 +30,6 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           # Set the AWS region; change if deploying to a different region
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify IAM Role Assumption
         run: aws sts get-caller-identity
