@@ -14,7 +14,9 @@ permissions:
 env:
   # Default AWS region; update as needed for your deployment
   AWS_REGION: us-east-1
-  TerraformStateBucket: yangw067test # Update with your S3 bucket name
+  TerraformStateBucket:
+    yangw067-terrafom-state
+    # Update with your S3 bucket name
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
@@ -38,7 +40,9 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Initialize Terraform
-        run: terraform init -input=false
+        run:
+          terraform init -input=false -backend-config="bucket=${{ env.TerraformStateBucket }}" \
+          -backend-config="${{ github.repository_id }}/terraform.tfstate" -backend-config="region=${{ env.AWS_REGION }}"
 
       - name: Terraform Plan
         working-directory: ${{ github.workspace }}
@@ -57,9 +61,7 @@ jobs:
       - name: Terraform destroy (optional, uncomment if you want to destroy resources after apply)
         if: steps.check_s3.outputs.exists == 'true'
         run: |
-          aws s3 cp s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate .
           if terraform destroy -input=false -auto-approve; then
-            aws s3 rm s3://${{ env.TerraformStateBucket }}/${{ github.repository_id }}/terraform.tfstate
             echo "Terraform destroy completed successfully."
           else
             echo "Terraform destroy failed. State file retained in S3 for troubleshooting."

@@ -16,7 +16,7 @@ permissions:
 env:
   # Default AWS region; update as needed for your deployment
   AWS_REGION: us-east-1
-  TerraformStateBucket: yangw067test # Update with your S3 bucket name
+  TerraformStateBucket: yangw067-terrafom-state # Update with your S3 bucket name
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
@@ -40,7 +40,9 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Initialize Terraform
-        run: terraform init -input=false
+        run:
+          terraform init -input=false -backend-config="bucket=${{ env.TerraformStateBucket }}" \
+          -backend-config="${{ github.repository_id }}/terraform.tfstate" -backend-config="region=${{ env.AWS_REGION }}"
 
       - name: Terraform Plan
         working-directory: ${{ github.workspace }}
@@ -48,9 +50,7 @@ jobs:
           terraform plan -input=false -var-file=terraform.tfvars -out=tf.plan
 
       - name: Terraform Apply
-        if: github.ref != 'refs/heads/Destroy'
         run: |
           terraform apply -input=false -auto-approve tf.plan
-          aws s3api put-object --bucket ${{ env.TerraformStateBucket }} --key ${{ github.repository_id }}/terraform.tfstate --body ./terraform.tfstate
           echo ${{ github.repository_id }}
           echo ${{ github.ref }}
